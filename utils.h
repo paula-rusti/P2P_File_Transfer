@@ -1,6 +1,6 @@
 /* server.h */
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-#include <stdbool.h>
 
 //struct only to store the start and end offset
 struct offset{
@@ -19,8 +18,9 @@ struct offset{
     unsigned int end;
 };
 
-// struct offset *
-void segment_file(int file_name, unsigned int nr_of_peers);
+typedef offset_ struct *offset;
+
+struct offset *segment_file(char *file_name, unsigned int nr_of_peers);
 
 
 #endif
