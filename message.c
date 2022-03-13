@@ -1,6 +1,7 @@
 #include "message.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 header_t *header_constructor1(byte_t mess_type, byte_t mess_subtype, byte_t res_code, unsigned int body_size)
 {
@@ -26,7 +27,7 @@ header_t *header_constructor2(byte_t *raw_header)
     return header;
 }
 
-message_t *message_constructor(byte_t *raw_message)
+message_t *message_constructor_from_raw(byte_t *raw_message)
 {
     message_t *message = malloc(sizeof(message_t));
     message->body = malloc(MAX_BODY_SIZE*sizeof(byte_t));
@@ -44,6 +45,25 @@ message_t *message_constructor(byte_t *raw_message)
     }
     
     return message;
+}
+
+message_t *message_constructor_from_params(byte_t mess_type, byte_t mess_subtype, byte_t res_code, unsigned int body_size, byte_t *body)
+{
+    message_t *message = malloc(sizeof(message_t));
+    message->body = malloc(sizeof(byte_t)*body_size);
+    header_t *header = header_constructor1(mess_type, mess_subtype, res_code, body_size);
+
+    message->header = header;
+    memcpy(message->body, body, body_size);
+    return message;
+}
+
+byte_t *serialize_message(message_t *message)
+{
+    byte_t *message_serial = malloc(sizeof(byte_t)*(HEADER_SIZE+message->header->body_size));
+    memcpy(message_serial, serialize_header(message->header), HEADER_SIZE);
+    memcpy(message_serial+HEADER_SIZE, message->body, message->header->body_size);
+    return message_serial;
 }
 
 byte_t *serialize_header(header_t *header)

@@ -84,10 +84,8 @@ void start_listening(server_t *server, void (*request_handler)(message_t *reques
             // read bytes from inbound_conn_fd(the client process of a peer) and try to assemble them in a valid message of type request
             byte_t *buffer = malloc(BYTES_SIZE_IN_LISTEN*sizeof(byte_t));
             read_request_message(inbound_conn_fd, buffer); //here buffer contains the request message
-            message_t *request = message_constructor(buffer);
+            message_t *request = message_constructor_from_raw(buffer);  //this perform the serialization as well
             (*request_handler)(request);
-            // call handle_request(request)
-            // then pass the message to a request handler
             exit(0);
         }
         else //parent process

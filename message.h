@@ -32,7 +32,9 @@ typedef struct Message
     
 }message_t;
 
-message_t *message_constructor(byte_t *message);
+message_t *message_constructor_from_raw(byte_t *message);
+message_t *message_constructor_from_params(byte_t mess_type, byte_t mess_subtype, byte_t res_code, unsigned int body_size, byte_t *body);
+byte_t *serialize_message(message_t *message);
 
 void print_message(message_t *message);
 
