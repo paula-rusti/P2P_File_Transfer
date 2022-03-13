@@ -6,6 +6,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
+#include "message.h"
+
 int main(int argc, char *argv[])
 {
     int socket_fd, port_nr;
@@ -45,13 +47,18 @@ int main(int argc, char *argv[])
     fgets(buffer, sizeof(buffer), stdin);   //get the msg in a buffer
 
     //send the msg to the server
-    int sent_bytes = write(socket_fd, buffer, strlen(buffer));
+    header_t* header = header_constructor1('0', '1', '6', sizeof(buffer));
+    byte_t *serialized = serialize_header(header);
+
+    byte_t *raw_message = malloc(100);
+    memcpy(raw_message, serialized, 12);
+    memcpy(raw_message+12, buffer, sizeof(buffer));
+    
+    int sent_bytes = write(socket_fd, raw_message, (header->body_size+12));
     if (sent_bytes < 0)
     {
         printf("unable to send msg to the server");
     }
-
-
 
     return 0;
 }

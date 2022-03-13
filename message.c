@@ -1,5 +1,6 @@
 #include "message.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 header_t *header_constructor1(byte_t mess_type, byte_t mess_subtype, byte_t res_code, unsigned int body_size)
 {
@@ -75,4 +76,20 @@ header_t *deserialize_header(byte_t *header_raw)
     header->body_size = *(int *)(header_raw+8);
 
     return header;
+}
+
+void print_message(message_t* message)
+{
+    printf("hex: %2x char: %c\n", message->header->magic[0], message->header->magic[0]);
+    printf("hex: %2x char: %c\n", message->header->magic[1], message->header->magic[1]);
+    printf("hex: %2x char: %c\n", message->header->magic[2], message->header->magic[2]);
+    printf("hex: %2x char: %c\n", message->header->magic[3], message->header->magic[3]);
+    printf("hex: %2x char: %c\n", message->header->magic[4], message->header->magic[4]);
+
+    printf("hex: %2x char: %c\n", message->header->message_type, message->header->message_type);
+    printf("hex: %2x char: %c\n", message->header->message_subtype, message->header->message_subtype);
+    printf("hex: %2x char: %c\n", message->header->response_code, message->header->response_code);
+    printf("hex: %2x int: %d\n",  message->header->body_size, message->header->body_size);
+
+    printf("body: %s\n", message->body);
 }

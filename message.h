@@ -34,4 +34,6 @@ typedef struct Message
 
 message_t *message_constructor(byte_t *message);
 
+void print_message(message_t *message);
+
 #endif

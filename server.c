@@ -1,21 +1,33 @@
 #include "server.h"
 #include "message.h"
+#include "handlers.h"
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <stdio.h>  // debug  
+
+#include "message.h"
+
+void start_listening(server_t*, void (*request_handler)(message_t *request));
 
 server_t *server_constructor(char *ip_addr, int port, int backlog)
 {
+    printf("server constructor called!!!\n");
     server_t *server = malloc(sizeof(server_t));
     
+    server->start_listening = start_listening;
+
     server->port = port;
     server->backlog = backlog;
-    
+ 
     server->address.sin_family = AF_INET;                       // ipv4
     server->address.sin_addr.s_addr = inet_addr(ip_addr);       // the given ip addr
     server->address.sin_port = htons(server->port);             // the given port
 
     server->socket = socket(AF_INET, SOCK_STREAM, 0); //get a socket file descripter for a IPv4, TCP socket
-
+    
     // Confirm the connection was successful.
     if (server->socket == -1)
     {
@@ -34,10 +46,11 @@ server_t *server_constructor(char *ip_addr, int port, int backlog)
         perror("Failed to start listening...\n");
         exit(1);
     }
+    printf("constructor done");
     return server;
 }
 
-void start_listening(server_t *server, void *(*request_handler)(char *request))
+void start_listening(server_t *server, void (*request_handler)(message_t *request))
 {
     if (!server)
     {
@@ -47,6 +60,7 @@ void start_listening(server_t *server, void *(*request_handler)(char *request))
     int inbound_conn_fd; //file descriptor corresponding to the socket opened for the inbound connection
     struct sockaddr_in client_addr;
     int client_addr_len = sizeof(struct sockaddr_in);
+    printf("Will start listening\n");
     for (;;)
     {
         //accept incoming connections, this call blocks until a peer connects
@@ -68,9 +82,10 @@ void start_listening(server_t *server, void *(*request_handler)(char *request))
             printf("child process\n");
             close(server->socket);    //THE CHILD PROCESS ALWAYS CLOSES THIS FD
             // read bytes from inbound_conn_fd(the client process of a peer) and try to assemble them in a valid message of type request
-            char *buffer = malloc(BYTES_SIZE_IN_LISTEN*sizeof(char));
+            byte_t *buffer = malloc(BYTES_SIZE_IN_LISTEN*sizeof(byte_t));
             read_request_message(inbound_conn_fd, buffer); //here buffer contains the request message
             message_t *request = message_constructor(buffer);
+            (*request_handler)(request);
             // call handle_request(request)
             // then pass the message to a request handler
             exit(0);
@@ -82,7 +97,7 @@ void start_listening(server_t *server, void *(*request_handler)(char *request))
     }
 }
 
-void read_request_message(int fd, char *buffer)
+void read_request_message(int fd, byte_t *buffer)
 {
     bzero(buffer, BYTES_SIZE_IN_LISTEN);    // init buff with 0's
     int n = read(fd, buffer, BYTES_SIZE_IN_LISTEN);
