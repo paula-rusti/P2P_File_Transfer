@@ -1,5 +1,6 @@
-#ifndef server_h
-#define server_h
+/* server.h */
+#ifndef SERVER_H
+#define SERVER_H
 
 #include <sys/socket.h>
 #include <netinet/in.h>
