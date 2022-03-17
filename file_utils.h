@@ -13,11 +13,12 @@
 
 //struct only to store the start and end offset
 struct offset{
+    int file_descriptor;
     unsigned int start;
     unsigned int end;
 };
 
 // struct offset *
-void segment_file(int file_name, unsigned int nr_of_peers);
-
+struct offset* segment_file(int file_name, unsigned int nr_of_peers);
+void reconstruct_file(struct offset* offsets);
 #endif

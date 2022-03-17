@@ -1,3 +1,5 @@
+#include "file_utils.h"
+#define BUFF 512
 void segment_file(int file_name, unsigned int nr_of_peers) {
 
     unsigned int nr_of_bytes;
@@ -50,4 +52,40 @@ void segment_file(int file_name, unsigned int nr_of_peers) {
     }
     close(file_name);
     close(file_name_out);
+}
+
+
+void reconstruct_file(struct offset* offsets, int nr_of_peers) {
+    
+    unsigned int read_bytes;
+    unsigned char buffer[BUFF];
+    memcpy(buffer, 0, BUFF);//setting the file to bytes of 0
+
+    char empty_buffer[BUFF];//empty array which we want to add as padding
+    memset(&empty_buffer, 0, BUFF);//setting the memory to 0
+
+    int file_name_out;
+
+    if ( (file_name_out = open("outfile.txt", O_WRONLY | O_ASYNC, S_IRWXU)) < 0){
+        perror("OUTPUT FILE CANNOT BE CREATED\n");
+		exit(-1);
+    }
+
+    for (int file_nr = 0; file_nr < nr_of_peers; file_nr++){
+        int file_name_input;
+        if ( (file_name_input = open(offsets[file_nr].file_descriptor, O_RDONLY)) < 0){
+        perror("File cannot be open\n");
+		exit(-1);
+    }
+        while ((read_bytes = read(file_name_input, buffer, BUFF)) > 0)
+        {
+            write(file_name_out, buffer, read_bytes)
+            if (read_bytes != 512)//if we read the last chunck of files, than we need to complete with the padding
+	    {
+		    memset(&empty_buffer, 0, 512-r);
+		    write(fd, empty_buffer, 512-r);
+	    }
+        }
+    }
+
 }
