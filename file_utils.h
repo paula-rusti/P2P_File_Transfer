@@ -10,7 +10,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdbool.h>
-
 #include <fcntl.h>
 
 #define BLOCK_SIZE 4096
@@ -18,14 +17,17 @@
 
 
 // struct offset *
-struct offset* segment_file(int file_name, unsigned int nr_of_peers);
-
+struct offset{
+    char* file_name;
+    unsigned int start;
+    unsigned int end;
+};
 
 /**
  * @brief reconstruct from the n file created by segment_file
  * @param offsets 
  */
-void reconstruct_file(struct offset* offsets);
+void reconstruct_file(struct offset* offsets, int nr_of_peers);
 
 /**
  * @brief returns content of the designated peer
