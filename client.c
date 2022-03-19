@@ -28,9 +28,30 @@ typedef struct
 void *thread_job(void *arg)
 {
     thread_param_t param = *(thread_param_t*)(arg);
-    int new_socket_fd = connect_to_node(param.ip, param.port);
+    int new_socket_fd = connect_to_node(param.ip, param.port);  //connect to the server process of the peer having the file, to issue a transfer bytes request
     printf("In thread, params: ip: %s ---- port: %d\n\n", param.ip, param.port);
 
+    byte_t body[sizeof(struct offset)];
+    message_t *transfer_req = message_constructor_from_params(REQUEST, TRANSFER_BYTES, '0', sizeof(struct offset), body);
+    byte_t *serialized = serialize_message(transfer_req);
+
+    int sent_bytes = write(new_socket_fd, serialized, (transfer_req->header->body_size+12));
+    if (sent_bytes < 0)
+    {
+        printf("unable to send msg to the server\n");
+    }
+
+    //read in blocks from the connection
+    int read_bytes = 0;
+    char buffer[4096];
+    printf("THREAD X read bytes:\n");
+    while((read_bytes = read(new_socket_fd, buffer, 4096))>0)
+    {
+        for (int i=0; i<read_bytes; i++)
+        {
+            putchar(buffer[i]);
+        }
+    }
     /*
     message_t
     write(new_socket_fd, request(transfer))
@@ -110,7 +131,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < seeders_index; i++)
     {
         params[i].off = offsets[i];
-        strncpy(params[i].ip, seeders[i].ip_addr, strlen(seeders[i].ip_addr));
+        strncpy(params[i].ip, seeders[i].ip_addr, strlen(seeders[i].ip_addr)+1);
         params[i].port = seeders[i].port;
     }
 

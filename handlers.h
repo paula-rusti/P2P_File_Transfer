@@ -3,6 +3,7 @@
 
 #include "message.h"
 #include "utils.h"
+#include "file_utils.h"
 
 extern file_t TEST_FILE_LIST[4];
 
@@ -38,6 +39,7 @@ void handle_view_file_list(int socket_fd);
 void handle_send_file_list(int socket_fd);
 void handle_download_file(int socket_fd, byte_t md5[16]);
 void handle_is_file_present(int socket_fd, byte_t md5[16]);   //received by peer servers
+void handle_transfer_bytes(int socket_fd, struct offset off);
 
 
 #endif

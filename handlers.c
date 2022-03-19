@@ -1,6 +1,7 @@
 #include "handlers.h"
 #include "message.h"
 #include "network_utils.h"
+#include "file_utils.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -47,13 +48,35 @@ void handle_request_peer(message_t *request, int socket_fd)
         memcpy(md5, request->body, 16);
         handle_is_file_present(socket_fd, md5);
     }
-
+    if (request->header->message_type == REQUEST && request->header->message_subtype == TRANSFER_BYTES )
+    {
+        struct offset request_param;
+        request_param.file_name = malloc(100);
+        memcpy(request_param.file_name, request->body, 16);
+        request_param.start = *(int *)(request->body+16);
+        request_param.end = *(int *)(request->body+20);
+        //memcpy(request_param.start, request->body+16, 4);
+        //memcpy(request_param.end, request->body+20, 4);   
+        printf("peers server received transfer bytes request, will call handler\n");     
+        handle_transfer_bytes(socket_fd, request_param);
+    }
 
 }
 
-void handle_transfer_bytes(int socket_fd)
+void handle_transfer_bytes(int socket_fd, struct offset off)
 {
-    
+    int file_fd = open("test_download.txt", O_RDONLY);
+    if (file_fd == -1)
+    {
+        printf("error opening test_download file");
+    }
+    int read_bytes = 0;
+    char buffer[4096];
+    printf("before read, reading from file to send to client peer\n");
+    while((read_bytes = read(file_fd, buffer, 4096))>0)
+    {
+        int written_bytes = write(socket_fd, buffer, read_bytes);
+    }
 }
 
 void handle_view_file_list(int socket_fd)
