@@ -16,9 +16,17 @@ void handle_request_tracker(message_t *request, int socket_fd)
     printf("msg is \n");
     print_message(request);
 
-    if (request->header->message_type == '0' && request->header->message_subtype == VIEW_FILE_LIST )
+    if (request->header->message_type == REQUEST && request->header->message_subtype == VIEW_FILE_LIST )
     {
         handle_view_file_list(socket_fd);
+    }
+    else if(request->header->message_type == REQUEST && request->header->message_subtype == DOWNLOAD_FILE)
+    {   
+        printf("in tracker: calling handler for download file\n");
+        //extract md5 from request body
+        byte_t md5[16];
+        memcpy(md5, request->body, 16);
+        handle_download_file(socket_fd, md5);
     }
 }
 
@@ -31,6 +39,13 @@ void handle_request_peer(message_t *request, int socket_fd)
     if (request->header->message_type == '0' && request->header->message_subtype == SEND_FILE_LIST )
     {
         handle_send_file_list(socket_fd);
+    }
+    if (request->header->message_type == REQUEST && request->header->message_subtype == IS_FILE_PRESENT )
+    {
+        //extract md5 from request body
+        byte_t md5[16];
+        memcpy(md5, request->body, 16);
+        handle_is_file_present(socket_fd, md5);
     }
 }
 
@@ -99,7 +114,97 @@ void handle_view_file_list(int socket_fd)
     write(socket_fd, for_client_raw, HEADER_SIZE + for_client->header->body_size);
 }
 
-void handle_send_file_list(int socket_fd)
+void handle_download_file(int socket_fd, byte_t md5[16])    //received by the tracker
+{
+    printf("!!!!in handle_download_file \n");
+    // broadcast to all peers to see if they have the file
+    byte_t index_array[NODES_NR];    //sth like a freq vector
+    int peers_nr = 0;   //nr of peers having the file
+    for (int i=1; i<NODES_NR; i++) // iterate from 1 cuz the first node is the tracker
+    {
+        printf("!!!!in handle_download_file  index %d\n", i);
+        int peer_fd = connect_to_node(NODES_ARRAY[i].ip_addr, NODES_ARRAY[i].port);
+        if(peer_fd==-1)
+            continue;
+
+        message_t *message = message_constructor_from_params(REQUEST, IS_FILE_PRESENT, '0', 16, (byte_t*)md5);
+        byte_t *serialized_message = serialize_message(message);
+        
+        int sent_bytes = write(peer_fd, serialized_message, (message->header->body_size+12));
+        if (sent_bytes < 0)
+        {
+            printf("unable to request IS_FILE_PRESENT to peer %s %d", NODES_ARRAY[i].ip_addr, NODES_ARRAY[i].port);
+        }
+
+        byte_t raw_response[256];
+        int read_bytes = read(peer_fd, raw_response, 256);
+    
+        if (read_bytes < 0)
+        {
+            printf("unable to read response!\n");
+        }
+        message_t *response = message_constructor_from_raw(raw_response);
+        if (response->header->response_code==FILE_PRESENT)
+        {
+            index_array[i]='1';
+            peers_nr++;
+        }
+        else
+            index_array[i]='0';
+    }
+    printf("broadcast done!!!!!!!!!!\n");
+    //boradcast sent, not we send to the client the array of peers having the file
+    message_t *message = message_constructor_from_params(RESPONSE, DOWNLOAD_FILE, SUCCESS, NODES_NR, index_array);
+    byte_t *serialized_message = serialize_message(message);
+    
+    int sent_bytes = write(socket_fd, serialized_message, (message->header->body_size+12));
+    if (sent_bytes < 0)
+    {
+        printf("unable to send response from download file to peer client");
+    }
+}
+
+void handle_is_file_present(int socket_fd, byte_t md5[16])   //received by peer servers
+{
+    //check to see if this peer has the requested md5
+    printf("!!!in handle_is_file_present requested md5 is %16s", md5);
+    int peer_has = 0;
+    for (int i=0; i<4; i++)
+    {
+        if(strncmp((const char *)md5, (const char *)TEST_FILE_LIST[i].hash, 16)==0)
+        {
+            message_t *message = message_constructor_from_params(RESPONSE, IS_FILE_PRESENT, FILE_PRESENT, 0, NULL);
+            byte_t *serialized_message = serialize_message(message);
+            printf("in handle file is present : \n");
+            print_message(message);
+            
+            int sent_bytes = write(socket_fd, serialized_message, (message->header->body_size+12));
+            if (sent_bytes < 0)
+            {
+                printf("unable to request IS_FILE_PRESENT to peer %s %d", NODES_ARRAY[i].ip_addr, NODES_ARRAY[i].port);
+            }
+            peer_has = 1;
+            break;
+        }
+        
+    }
+    if (!peer_has)
+        {
+            message_t *message = message_constructor_from_params(RESPONSE, IS_FILE_PRESENT, FILE_NOT_PRESENT, 0, NULL);
+            byte_t *serialized_message = serialize_message(message);
+            printf("in handle file is present : \n");
+            print_message(message);
+            
+            int sent_bytes = write(socket_fd, serialized_message, (message->header->body_size+12));
+            if (sent_bytes < 0)
+            {
+                perror("unable to request IS_FILE_PRESENT to peer");
+            }
+        }
+}
+
+
+void handle_send_file_list(int socket_fd)   //received by peer servers
 {
     printf("in handle_send_file_list\n");
     byte_t *body = serialize_file_array(TEST_FILE_LIST, 3);

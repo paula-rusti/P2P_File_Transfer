@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     fgets(buffer, sizeof(buffer), stdin);   //get the msg in a buffer -> msg body
 
     //build msg then serialize then send to the server
-    message_t *message = message_constructor_from_params('0', VIEW_FILE_LIST, '0', sizeof(buffer), (byte_t*)buffer);
+    message_t *message = message_constructor_from_params(REQUEST, DOWNLOAD_FILE, '0', sizeof(buffer), (byte_t*)buffer);
     byte_t *serialized_message = serialize_message(message);
     
     int sent_bytes = write(socket_fd, serialized_message, (message->header->body_size+12));
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     }
     message_t *response = message_constructor_from_raw(raw_response);
 
-    printf("GOT LIST:\n");
+    printf("GOT LIST OF PEERS:\n");
     print_message(response);
 
     close(socket_fd);
