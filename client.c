@@ -50,6 +50,21 @@ int main(int argc, char *argv[])
     printf("GOT LIST OF PEERS:\n");
     print_message(response);
 
+    node_t seeders[NODES_NR - 1]; // one node is always the tracker, hence the -1
+    int seeders_index = 0;
+    
+    for (int i = 0; i <  response->header->body_size; i++)
+    {
+        if (response->body[i] == '1')
+        {
+            seeders[seeders_index++] = NODES_ARRAY[i];
+        }
+    }
+
+    for (int i = 0; i < seeders_index; i++)
+        printf("ip: %s ---- port: %d\n\n", seeders[i].ip_addr, seeders[i].port);
+    
+
     close(socket_fd);
 
     return 0;
