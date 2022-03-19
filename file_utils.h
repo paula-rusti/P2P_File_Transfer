@@ -13,8 +13,7 @@
 #include <fcntl.h>
 
 #define BLOCK_SIZE 4096
-
-
+#define BUFF 512
 
 // struct offset *
 struct offset{
@@ -45,4 +44,10 @@ void write_segment(struct offset* offsets, int file);
  * @return list of offsets assignated 
  */
 struct offset* segment_file(int file_name, unsigned int nr_of_peers);
+
+/**
+ * @brief Deletes the locally intermediary filles.
+ * @return 0 on succesful removal
+ */
+int remove_files(struct offset* offsets, int nr_of_peers);
 #endif

@@ -1,7 +1,17 @@
 #include "file_utils.h"
 #include <string.h>
 
-#define BUFF 512
+int remove_files(struct offset* offsets, int nr_of_peers) {
+    for(int i = 0; i < nr_of_peers; i++) {
+       
+        /* get the name of each files from corresponding peer and delete it */
+        if (remove(offsets[i].file_name) != 0) {
+            printf("Could not remove file: %s", offsets[i].file_name);
+            return 1;
+        }
+    }
+    return 0;
+}
 
 void write_segment(struct offset* offsets, int file) {
 
@@ -21,7 +31,7 @@ void write_segment(struct offset* offsets, int file) {
     if(segment_size > BLOCK_SIZE) {
         while( (read_bytes = read(file, &buff, BLOCK_SIZE)) > 0) {
             write(segment, &buff, read_bytes);
-            printf("1-DATA= \n%s", buff);
+            // printf("1-DATA= \n%s", buff);
             memset(&buff, 0, read_bytes);
             
         }
@@ -29,7 +39,7 @@ void write_segment(struct offset* offsets, int file) {
     else{
         read_bytes = read(file, &buff, segment_size);
         write(segment, &buff, segment_size);
-        printf("2-DATA= \n%s", buff);
+        // printf("2-DATA= \n%s", buff);
         memset(&buff, 0, read_bytes);
     }
 
@@ -57,10 +67,10 @@ struct offset* segment_file(int file_name, unsigned int nr_of_peers) {
 
 
         /* for each peer add an offset i to it & do conversion*/
-        char filename[33];
+        char *filename = malloc(sizeof(char) * 33);
         int name_to_convert = sb.st_dev + i;
-        offsets[i].file_name = malloc(sizeof(char) * 33);
-        strcpy(offsets[i].file_name, filename);
+        snprintf(filename, 33, "%d", name_to_convert);
+        offsets[i].file_name = filename;
 
         /* the first peer that needs to be treated with the rest of bytes */
         if(i == 0) {
@@ -73,14 +83,12 @@ struct offset* segment_file(int file_name, unsigned int nr_of_peers) {
         }
 
         /* control print*/
-        printf("Offset i = %d{name(%s),start(%d),end(%d)}\n", i, offsets[i].file_name, offsets[i].start, offsets[i].end);
+        //printf("Offset i = %d{name(%s),start(%d),end(%d)}\n", i, offsets[i].file_name, offsets[i].start, offsets[i].end);
 
         /* write segment to corresponding files */
         write_segment(&offsets[i], file_name);
     }   
 
-    for(int i = 0; i < nr_of_peers; i++)
-        printf("Print file name %i: %s\n", i, offsets[i].file_name);
     return offsets;
 }
 
@@ -125,10 +133,12 @@ void reconstruct_file(struct offset* offsets, int nr_of_peers) {
 
 int main(){
 
-    int fd = open("blabla", O_APPEND, S_IRWXU);//in future we should change the name of the input file
-    int peers = 7;
-    struct offset* offsets = segment_file(fd, peers);
-    reconstruct_file(offsets, peers);
+    // int fd = open("blabla", O_APPEND|O_CREAT, S_IRWXU);//in future we should change the name of the input file
+    // int peers = 7;
+    // struct offset* offsets = segment_file(fd, peers);
+    // reconstruct_file(offsets, peers);
+    // remove_files(offsets, peers);
+
     return 0;
 }
 
