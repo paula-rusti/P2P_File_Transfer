@@ -45,7 +45,7 @@ int connect_to_node(char *ip_addr, int port)
 
     if ( connect(socket_fd, (struct sockaddr*)&server_addr, sizeof(server_addr) ) < 0 )
     {
-        printf("error in CONNECT");
+        printf("error in CONNECT; port: %d; ip: %s\n", port, ip_addr);
         return -1;
     }
     return socket_fd;

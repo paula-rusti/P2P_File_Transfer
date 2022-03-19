@@ -1,6 +1,9 @@
 #ifndef Utils_h
 #define Utils_h
 
+#define MAX_FILES_PER_PEER 5
+#define FILE_STRUCT_SIZE 26 // in bytes
+
 typedef struct file
 {
     unsigned char hash[16];

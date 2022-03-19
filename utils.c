@@ -22,12 +22,12 @@ file_t* deserialize_file_array(unsigned char* body, int body_size)
     int file_nr = body_size/(16+10);
     file_t *file_array = malloc(sizeof(file_t)*(file_nr));
     
-    printf("!!!!!!!!!!!!!!body is: %s\n", body);
+    //printf("!!!!!!!!!!!!!!body is: %s\n", body);
     for (int i=0; i<file_nr; i++)
     {
         memcpy(file_array[i].hash, body+i*(16+10), 16);
         memcpy(file_array[i].name, body+i*(16+10)+16, 10);
-        printf("!!!!!!!!!!!!!!!!!!!! %s\n%s\n", file_array[i].hash, file_array[i].name);
+        //printf("!!!!!!!!!!!!!!!!!!!! %s\n%s\n", file_array[i].hash, file_array[i].name);
     }
     return file_array;
 }

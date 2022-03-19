@@ -4,7 +4,7 @@
 #include "message.h"
 #include "utils.h"
 
-extern file_t TEST_FILE_LIST[2];
+extern file_t TEST_FILE_LIST[4];
 
 typedef enum msg_subtype
 {

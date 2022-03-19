@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 
     char buffer[256];
     //here we have connection
-    printf("connected, pls enter a message: ");
+    printf("connected, pls enter a message: \n");
     bzero(buffer, sizeof(buffer));
     fgets(buffer, sizeof(buffer), stdin);   //get the msg in a buffer -> msg body
 
@@ -34,10 +34,21 @@ int main(int argc, char *argv[])
     int sent_bytes = write(socket_fd, serialized_message, (message->header->body_size+12));
     if (sent_bytes < 0)
     {
-        printf("unable to send msg to the server");
+        printf("unable to send msg to the server\n");
     }
 
     //also read the response from the tracker server in order to display the data on the screen
+    byte_t raw_response[256];
+    int read_bytes = read(socket_fd, raw_response, 256);
+
+    if (read_bytes < 0)
+    {
+        printf("unable to read response!\n");
+    }
+    message_t *response = message_constructor_from_raw(raw_response);
+
+    printf("GOT LIST:\n");
+    print_message(response);
 
     close(socket_fd);
 
