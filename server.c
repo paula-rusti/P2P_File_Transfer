@@ -1,14 +1,17 @@
 #include "server.h"
 #include "message.h"
 #include "handlers.h"
+#include "message.h"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h> 
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdio.h>  // debug  
 
-#include "message.h"
 
 void start_listening(server_t*, void (*request_handler)(message_t *request, int socket_fd));
 
