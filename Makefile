@@ -12,7 +12,7 @@ peer_server2.x:
 	gcc -Wall -o peer_server2.x $(sources) peer_server2.c
 
 client.x:
-	gcc -Wall -o client.x $(sources) client.c
+	gcc -Wall -o client.x $(sources) -lpthread client.c
 
 remove:
 	rm *.x

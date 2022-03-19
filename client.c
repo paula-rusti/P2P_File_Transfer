@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -9,7 +10,37 @@
 #include "message.h"
 #include "handlers.h"
 #include "network_utils.h"
+#include "file_utils.h"
 
+typedef struct 
+{
+    struct offset off;
+    char ip[64];
+    int port;
+}thread_param_t;
+
+typedef struct
+{
+	thread_param_t off;
+	pthread_t tid;
+}thread_descriptor_t;
+
+void *thread_job(void *arg)
+{
+    thread_param_t param = *(thread_param_t*)(arg);
+    int new_socket_fd = connect_to_node(param.ip, param.port);
+    printf("In thread, params: ip: %s ---- port: %d\n\n", param.ip, param.port);
+
+    /*
+    message_t
+    write(new_socket_fd, request(transfer))
+
+    read(new_socket_fd, buff, 4096)
+    write(temp_file, buff, 4096)
+    */
+
+    return NULL;
+}
 
 int main(int argc, char *argv[])
 {
@@ -61,9 +92,50 @@ int main(int argc, char *argv[])
         }
     }
 
+    thread_descriptor_t threads[seeders_index];
+    thread_param_t params[seeders_index];
+
+    int file_size = 20; // bytes
+    struct offset offsets[seeders_index];
+    offsets[0].start = 0;
+    offsets[0].end = 10;
+    offsets[0].file_name = malloc(10);
+    strncpy(offsets[0].file_name, "test_file", 10); 
+
+    offsets[1].start = 11;
+    offsets[1].end = 20;
+    offsets[1].file_name = malloc(10);
+    strncpy(offsets[1].file_name, "test_file", 10);
+
     for (int i = 0; i < seeders_index; i++)
+    {
+        params[i].off = offsets[i];
+        strncpy(params[i].ip, seeders[i].ip_addr, strlen(seeders[i].ip_addr));
+        params[i].port = seeders[i].port;
+    }
+
+    for (int i = 0; i < seeders_index; i++)
+    {
         printf("ip: %s ---- port: %d\n\n", seeders[i].ip_addr, seeders[i].port);
+
+        //create thread
+        if(pthread_create(&threads[i].tid, NULL, thread_job, &params[i]) != 0)
+		{
+			fprintf(stderr, "Thread creation failed.\n");
+			return 1;
+		}
+    }
     
+    for(int i = 0; i < seeders_index; i++)
+	{
+		if(pthread_join(threads[i].tid, NULL) != 0)
+		{
+			fprintf(stderr, "Thread join failed.\n");
+			return 1;
+		}
+	}
+    
+    // reconstruct(temp_files)
 
     close(socket_fd);
 

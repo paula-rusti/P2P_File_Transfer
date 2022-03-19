@@ -47,6 +47,13 @@ void handle_request_peer(message_t *request, int socket_fd)
         memcpy(md5, request->body, 16);
         handle_is_file_present(socket_fd, md5);
     }
+
+
+}
+
+void handle_transfer_bytes(int socket_fd)
+{
+    
 }
 
 void handle_view_file_list(int socket_fd)
