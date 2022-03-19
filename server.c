@@ -1,6 +1,8 @@
 #include "server.h"
 #include "message.h"
 #include "handlers.h"
+#include "message.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h> 
@@ -9,6 +11,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdio.h>  // debug  
+
+
+void start_listening(server_t*, void (*request_handler)(message_t *request, int socket_fd));
 
 server_t *server_constructor(char *ip_addr, int port, int backlog)
 {
@@ -48,7 +53,7 @@ server_t *server_constructor(char *ip_addr, int port, int backlog)
     return server;
 }
 
-void start_listening(server_t *server, void (*request_handler)(message_t *request))
+void start_listening(server_t *server, void (*request_handler)(message_t *request, int socket_fd))
 {
     if (!server)
     {
@@ -83,7 +88,8 @@ void start_listening(server_t *server, void (*request_handler)(message_t *reques
             byte_t *buffer = malloc(BYTES_SIZE_IN_LISTEN*sizeof(byte_t));
             read_request_message(inbound_conn_fd, buffer); //here buffer contains the request message
             message_t *request = message_constructor_from_raw(buffer);  //this perform the serialization as well
-            (*request_handler)(request);
+            (*request_handler)(request, inbound_conn_fd);
+            close(inbound_conn_fd);     // close fb after reading and handling the request
             exit(0);
         }
         else //parent process

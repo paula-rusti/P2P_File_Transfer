@@ -111,5 +111,9 @@ void print_message(message_t* message)
     printf("hex: %2x char: %c\n", message->header->response_code, message->header->response_code);
     printf("hex: %2x int: %d\n",  message->header->body_size, message->header->body_size);
 
-    printf("body: %s\n", message->body);
+    for (int i = 0; i < message->header->body_size; i++)
+    {
+        printf("%c", message->body[i]);
+    }
+    putchar('\n');
 }

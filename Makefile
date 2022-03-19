@@ -1,12 +1,18 @@
-CFLAGS+=-Wall
-server: server.c
-	gcc ${CFLAGS} -o c_server server.c 
+sources := message.c handlers.c network_utils.c server.c utils.c
 
-server_conc: server_conc.c
-		gcc ${CFLAGS} -o server_conc server_conc.c 
+all: peer_server1.x peer_server2.x tracker.x client.x  
 
-file_utils: file_utils.c
-		gcc ${CFLAGS} -o file_utils file_utils.c
+peer_server1.x: 
+	gcc -Wall -o peer_server1.x $(sources) peer_server.c
 
-clean:
-	rm *.o
+tracker.x:
+	gcc -Wall -o tracker.x $(sources) test_server.c
+
+peer_server2.x:
+	gcc -Wall -o peer_server2.x $(sources) peer_server2.c
+
+client.x:
+	gcc -Wall -o client.x $(sources) client.c
+
+remove:
+	rm *.x

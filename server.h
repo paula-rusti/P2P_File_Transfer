@@ -14,7 +14,7 @@ typedef struct Server{
     int backlog;
     struct sockaddr_in address; //socket address
     int socket;  //basically an open file descriptor
-    void (*start_listening)(struct Server *server, void (*request_handler)(message_t *request)); //the fct which spawns new processes for every incoming request
+    void (*start_listening)(struct Server *server, void (*request_handler)(message_t *request, int socket_fd)); //the fct which spawns new processes for every incoming request
 }server_t;
 
 server_t *server_constructor(char *ip_addr, int port, int backlog);
