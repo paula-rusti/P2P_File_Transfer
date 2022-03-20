@@ -1,7 +1,7 @@
 #ifndef Network_utils_h
 #define Network_utils_h
 
-#define NODES_NR 3
+#define NODES_NR 4
 
 typedef struct node
 {
