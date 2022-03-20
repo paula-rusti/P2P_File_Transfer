@@ -203,14 +203,19 @@ void handle_download_file(int socket_fd, byte_t md5[HASH_SIZE])    //received by
     }
 }
 
+file_t *get_files_info();
+
 void handle_is_file_present(int socket_fd, byte_t md5[HASH_SIZE])   //received by peer servers
 {
     //check to see if this peer has the requested md5
     printf("!!!in handle_is_file_present requested md5 is %32s", md5);
     int peer_has = 0;
+
+    file_t *files = get_files_info();
+
     for (int i = 0; i < 4; i++)
     {
-        if(strncmp((const char *)md5, (const char *)TEST_FILE_LIST[i].hash, HASH_SIZE) == 0)
+        if(strncmp((const char *)md5, (const char *)files[i].hash, HASH_SIZE) == 0)
         {
             message_t *message = message_constructor_from_params(RESPONSE, IS_FILE_PRESENT, FILE_PRESENT, 0, NULL);
             byte_t *serialized_message = serialize_message(message);
@@ -312,20 +317,20 @@ file_t *get_files_info()
 
 	}
 
-	for(int i = 0; i < files_idx; i++)
-	{
-		for(int j = 0; j < 32; j++)
-			putchar(files[i].hash[j]);
-		printf("  ");
+	// for(int i = 0; i < files_idx; i++)
+	// {
+	// 	for(int j = 0; j < 32; j++)
+	// 		putchar(files[i].hash[j]);
+	// 	printf("  ");
 
-		for(int j = 0; j < 10; j++)
-			putchar(files[i].name[j]);
+	// 	for(int j = 0; j < 10; j++)
+	// 		putchar(files[i].name[j]);
 
-		printf("  %lu ", files[i].size);
-		putchar('\n');
-	}
+	// 	printf("  %d ", files[i].size);
+	// 	putchar('\n');
+	// }
 
-	pclose(fp);
+	// pclose(fp);
 
 	return files;
 }

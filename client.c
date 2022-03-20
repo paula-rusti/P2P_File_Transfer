@@ -26,6 +26,9 @@ typedef struct
     pthread_t tid;
 } thread_descriptor_t;
 
+file_t *a_files;
+unsigned a_files_number;
+
 void *thread_job(void *arg)
 {
     // get parameters nicely
@@ -80,7 +83,7 @@ void *thread_job(void *arg)
     return NULL;
 }
 
-void download_file_routine()
+void download_file_routine(unsigned char *file_name, unsigned char *md5, int file_size)
 {
     int socket_fd = connect_to_node("localhost", 5010);
 
@@ -90,14 +93,8 @@ void download_file_routine()
         exit(1);
     }
 
-    char buffer[256];
-    // here we have connection
-    printf("connected, pls enter a message: \n");
-    bzero(buffer, sizeof(buffer));
-    fgets(buffer, sizeof(buffer), stdin); // get the msg in a buffer -> msg body
-
     // build msg then serialize then send to the server
-    message_t *message = message_constructor_from_params(REQUEST, DOWNLOAD_FILE, '0', sizeof(buffer), (byte_t *)buffer);
+    message_t *message = message_constructor_from_params(REQUEST, DOWNLOAD_FILE, '0', HASH_SIZE, (byte_t *)md5);
     byte_t *serialized_message = serialize_message(message);
 
     int sent_bytes = write(socket_fd, serialized_message, (message->header->body_size + HEADER_SIZE));
@@ -121,25 +118,25 @@ void download_file_routine()
 
     node_t seeders[NODES_NR - 1]; // one node is always the tracker, hence the -1
     int seeders_index = 0;
+    int nodes_arr_idx = 1;
 
     for (int i = 0; i < response->header->body_size; i++)
     {
         if (response->body[i] == '1')
         {
-            seeders[seeders_index++] = NODES_ARRAY[i];
+            seeders[seeders_index++] = NODES_ARRAY[nodes_arr_idx++];
         }
     }
 
     thread_descriptor_t threads[seeders_index];
     thread_param_t params[seeders_index];
 
-    int file_size = 23; // bytes
     struct offset *offsets = segment_file_size(file_size, seeders_index);
 
     for (int i = 0; i < seeders_index; i++)
     {
         offsets[i].file_name = malloc(100);
-        strncpy(offsets[i].file_name, "blabla", 7);
+        strncpy((char *)offsets[i].file_name, (const char *)file_name, NAME_SIZE);
         params[i].off = offsets[i];
         strncpy(params[i].ip, seeders[i].ip_addr, strlen(seeders[i].ip_addr) + 1);
         params[i].port = seeders[i].port;
@@ -210,20 +207,21 @@ void view_file_list_routine()
     printf("Available files:\n");
     printf("              md5                    name     size\n");
     // print_message(response);
-    file_t *files = deserialize_file_array(response->body, response->header->body_size);
+    a_files = deserialize_file_array(response->body, response->header->body_size);
+    a_files_number = response->header->body_size / FILE_STRUCT_SIZE;
 
     for (int i = 0; i < (response->header->body_size / FILE_STRUCT_SIZE); i++)
     {
         for (int j = 0; j < HASH_SIZE; j++)
-            putchar(files[i].hash[j]);
+            putchar(a_files[i].hash[j]);
         putchar(' ');
 
         for(int j = 0; j < NAME_SIZE; j++)
-            putchar(files[i].name[j]);
+            putchar(a_files[i].name[j]);
 
         putchar(' ');
 
-        printf("%d\n", files[i].size);
+        printf("%d\n", a_files[i].size);
     }
 
     close(socket_fd);
@@ -234,7 +232,7 @@ void main_loop()
     printf("P2P client v0.1\n");
     printf("Usage:\n");
     printf("list - lists file available that connected peers have ready for download\n");
-    printf("d <md5> - attempts to download the file with the given md5\n");
+    printf("d - attempts to download the file with the given md5\n");
     printf("exit - quits the program\n");
 
     char command[100];
@@ -256,12 +254,35 @@ void main_loop()
 
             scanf("%s", md5);
 
-            printf("md5 is %s\n", md5);
+            printf("fn is %s\n", md5);
 
-            if(strlen((const char *)md5) != 32)
-                printf("len not ok");
-            else
-                printf("len ok");
+            int size, found = 0;
+            unsigned char file_name[NAME_SIZE];
+            for (int i = 0; i < a_files_number; i++)
+            {
+                printf("COMPARING ");
+                printf("%s\n", a_files[i].hash);
+
+                if (strncmp(a_files[i].hash, md5, HASH_SIZE) == 0)
+                {
+                    found = 1;
+                    size = a_files[i].size;
+                    memcpy(file_name, a_files[i].name, strlen(a_files[i].name));
+                    file_name[(strlen(a_files[i].name))] = 0;
+                    printf("FILE IN FILES: %s\n", a_files[i].name);
+                    printf("LEN IS %d\n", strlen(a_files[i].name));
+                    break;
+                }
+            }
+
+            if (found == 0)
+            {
+                printf("File not available!\n");
+                continue;
+            }
+
+            printf("FOUND FILE NAME IS %s\n", file_name);
+            download_file_routine(file_name, md5, size);
         }
         else if (strcmp(command, "exit") == 0)
         {
