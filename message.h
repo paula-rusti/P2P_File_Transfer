@@ -8,7 +8,7 @@ typedef unsigned char byte_t;
 
 typedef struct Header
 {
-    char magic[5] ;                   // 5 bytes
+    byte_t magic[5] ;                   // 5 bytes
     byte_t message_type;                 // specifies if the current message is a request, response, ACK or NACK
     byte_t message_subtype;              // e.g. VIEW_LIST, TRANSFER_BYTES, AI_FISIER, etc
     byte_t response_code;                // in case of a req should be ignored; else takes values such as: OK or error_code for the response of a specific reques

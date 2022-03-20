@@ -30,18 +30,18 @@ header_t *header_constructor2(byte_t *raw_header)
 message_t *message_constructor_from_raw(byte_t *raw_message)
 {
     message_t *message = malloc(sizeof(message_t));
-    message->body = malloc(MAX_BODY_SIZE*sizeof(byte_t));
+    message->body = malloc(MAX_BODY_SIZE * sizeof(byte_t));
     byte_t raw_header[HEADER_SIZE];
     
-    for(int i=0; i<HEADER_SIZE; i++)
+    for(int i = 0; i < HEADER_SIZE; i++)
     {
         raw_header[i] = raw_message[i];
     }
     message->header = deserialize_header(raw_header);
     
-    for(int i=0; i<message->header->body_size; i++)
+    for(int i=0; i < message->header->body_size; i++)
     {
-        message->body[i] = raw_message[i+HEADER_SIZE];
+        message->body[i] = raw_message[i + HEADER_SIZE];
     }
     
     return message;
@@ -50,7 +50,7 @@ message_t *message_constructor_from_raw(byte_t *raw_message)
 message_t *message_constructor_from_params(byte_t mess_type, byte_t mess_subtype, byte_t res_code, unsigned int body_size, byte_t *body)
 {
     message_t *message = malloc(sizeof(message_t));
-    message->body = malloc(sizeof(byte_t)*body_size);
+    message->body = malloc(sizeof(byte_t) * body_size);
     header_t *header = header_constructor1(mess_type, mess_subtype, res_code, body_size);
 
     message->header = header;
@@ -60,24 +60,24 @@ message_t *message_constructor_from_params(byte_t mess_type, byte_t mess_subtype
 
 byte_t *serialize_message(message_t *message)
 {
-    byte_t *message_serial = malloc(sizeof(byte_t)*(HEADER_SIZE+message->header->body_size));
+    byte_t *message_serial = malloc(sizeof(byte_t) * (HEADER_SIZE + message->header->body_size));
     memcpy(message_serial, serialize_header(message->header), HEADER_SIZE);
-    memcpy(message_serial+HEADER_SIZE, message->body, message->header->body_size);
+    memcpy(message_serial + HEADER_SIZE, message->body, message->header->body_size);
     return message_serial;
 }
 
 byte_t *serialize_header(header_t *header)
 {
-    byte_t *raw_header = malloc(HEADER_SIZE*sizeof(byte_t));
+    byte_t *raw_header = malloc(HEADER_SIZE * sizeof(byte_t));
 
-    for(int i=0; i<5; i++)
+    for(int i = 0; i < 5; i++)
     {
-        raw_header[i]=header->magic[i];
+        raw_header[i] = header->magic[i];
     }
-    raw_header[5]=header->message_type;
-    raw_header[6]=header->message_subtype;
-    raw_header[7]=header->response_code;
-    *(int *)(raw_header+8) = header->body_size;
+    raw_header[5] = header->message_type;
+    raw_header[6] = header->message_subtype;
+    raw_header[7] = header->response_code;
+    *(int *)(raw_header + 8) = header->body_size;
 
     return raw_header;
 }
@@ -86,9 +86,9 @@ header_t *deserialize_header(byte_t *header_raw)
 {
     header_t *header = malloc(sizeof(header_t));
 
-    for (int i=0; i<5; i++)
+    for (int i = 0; i < 5; i++)
     {
-        header->magic[i]=header_raw[i];
+        header->magic[i] = header_raw[i];
     }
     header->message_type = header_raw[5];
     header->message_subtype = header_raw[6];

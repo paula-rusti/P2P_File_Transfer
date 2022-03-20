@@ -6,11 +6,11 @@ file_t TEST_FILE_LIST[4];
 
 int main()
 {
-    memcpy(TEST_FILE_LIST[0].hash, "AAAAAAAAAAAAAAAA", 16);
+    memcpy(TEST_FILE_LIST[0].hash, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 32);
     memcpy(TEST_FILE_LIST[0].name, "file_1aaaa", 10);
-    memcpy(TEST_FILE_LIST[1].hash, "BBBBBBBBBBBBBBBB", 16);
+    memcpy(TEST_FILE_LIST[1].hash, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", 32);
     memcpy(TEST_FILE_LIST[1].name, "file_2bbbb", 10);
-    memcpy(TEST_FILE_LIST[2].hash, "CCCCCCCCCCCCCCCC", 16);
+    memcpy(TEST_FILE_LIST[2].hash, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC", 32);
     memcpy(TEST_FILE_LIST[2].name, "file_3cccc", 10);
 
 

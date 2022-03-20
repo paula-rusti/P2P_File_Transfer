@@ -26,11 +26,12 @@ typedef struct
 }thread_descriptor_t;
 
 void *thread_job(void *arg)
-{
+{   
+    // get parameters nicely
     thread_param_t param = *(thread_param_t*)(arg);
-    int new_socket_fd = connect_to_node(param.ip, param.port);  //connect to the server process of the peer having the file, to issue a transfer bytes request
+    //connect to the server process of the peer having the file, to issue a transfer bytes request
+    int new_socket_fd = connect_to_node(param.ip, param.port);  
     printf("In thread, params: ip: %s ---- port: %d\n\n", param.ip, param.port);
-
 
     // file_name is variable in size and we cannot say sizeof(struct offset) because we have a char *, which is fixed in size
     unsigned body_size = strlen(param.off.file_name) + 2 * sizeof(int);
@@ -46,7 +47,7 @@ void *thread_job(void *arg)
     byte_t *serialized = serialize_message(transfer_req);
 
     // send TRANSFER_BYTES request to the other peer's server
-    int sent_bytes = write(new_socket_fd, serialized, (transfer_req->header->body_size+12));
+    int sent_bytes = write(new_socket_fd, serialized, (transfer_req->header->body_size + HEADER_SIZE));
     if (sent_bytes < 0)
     {
         printf("unable to send msg to the server\n");
@@ -64,11 +65,15 @@ void *thread_job(void *arg)
 
     // create temp file and write the segment
     int tmp_fd = open(tmp_name, O_WRONLY | O_CREAT);
-    int written_bytes = 0;
+    int written_bytes;
 
     while((read_bytes = read(new_socket_fd, buffer, 4096))>0)
     {
         written_bytes = write(tmp_fd, buffer, read_bytes);
+        if (written_bytes == -1)
+        {
+            printf("write() error in thread_job()\n");
+        }
     }
 
     return NULL;
@@ -94,7 +99,7 @@ int main(int argc, char *argv[])
     message_t *message = message_constructor_from_params(REQUEST, DOWNLOAD_FILE, '0', sizeof(buffer), (byte_t*)buffer);
     byte_t *serialized_message = serialize_message(message);
     
-    int sent_bytes = write(socket_fd, serialized_message, (message->header->body_size+12));
+    int sent_bytes = write(socket_fd, serialized_message, (message->header->body_size + HEADER_SIZE));
     if (sent_bytes < 0)
     {
         printf("unable to send msg to the server\n");
