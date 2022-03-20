@@ -85,7 +85,7 @@ void handle_view_file_list(int socket_fd)
 {
     printf("in handle_view_file_list\n");
     //broadcast a SEND_FILE_LIST to all the peers in the network, read their responses and build the file names list, finally send that list to the client using fd
-    file_t *files_arr = malloc(MAX_FILES_PER_PEER * NODES_NR * sizeof(file_t));
+    file_t *files_arr = malloc(MAX_FILES_PER_PEER * NODES_NR * FILE_STRUCT_SIZE);
     int files_index = 0;
 
     for (int i = 1; i < NODES_NR; i++) // iterate from 1 cuz the first node is the tracker
@@ -135,6 +135,7 @@ void handle_view_file_list(int socket_fd)
             {
                 memcpy(files_arr[files_index].hash, temp_file_list[i].hash, HASH_SIZE);
                 memcpy(files_arr[files_index].name, temp_file_list[i].name, NAME_SIZE);
+                files_arr[files_index].size = temp_file_list[i].size;
                 files_index++;
             }
         }
@@ -241,12 +242,102 @@ void handle_is_file_present(int socket_fd, byte_t md5[HASH_SIZE])   //received b
         }
 }
 
+file_t *get_files_info()
+{
+    file_t *files = malloc(10 * sizeof(file_t));
+	int files_idx = 0;
+
+	FILE *fp, *md5fp;
+	char md5[200];
+	char path[1000];
+	if (!(fp = popen("/bin/ls", "r")))
+	{
+		printf("popen() error\n");
+		exit(1);
+	}
+
+	int fc = 0;
+
+	while(fgets(path, sizeof(path), fp) != NULL)
+	{
+		if (fc == MAX_FILES_PER_PEER)
+			break;
+
+		//printf("%s len = %d", path, strlen(path));
+		char temp_path[100];
+		memcpy(temp_path, path, strlen(path));
+		temp_path[strlen(path) - 1] = 0;
+
+		struct stat st;
+		stat(temp_path, &st);
+		files[files_idx].size = (int)st.st_size;
+
+		char command[100] = "python3 get_md5.py ";
+		strcat(command, path);
+		//printf("%s\n", command);
+
+		//get md5
+		if (!(md5fp = popen(command, "r")))
+		{
+			printf("popen() error\n");
+			exit(1);
+		}
+
+		if (fgets(md5, sizeof(md5), md5fp) == NULL)
+			printf("fgets() error\n");
+
+		md5[32] = 0;
+		//printf("new %s\n", md5);
+
+		memcpy(files[files_idx].hash, md5, 32);
+
+		//printf("%s\n", path);
+		if (strlen(path) > 10)
+		{
+			for (int i = 0 ; i < 7; i++)
+				files[files_idx].name[i] = path[i];
+			files[files_idx].name[7] = '.';
+			files[files_idx].name[8] = '.';
+			files[files_idx].name[9] = '.';
+
+		}
+		else
+		{
+			memcpy(files[files_idx].name, path, strlen(path));
+		}
+
+		files[files_idx].name[strlen(path) - 1] = 0;
+		files_idx++;
+		fc++;
+
+	}
+
+	for(int i = 0; i < files_idx; i++)
+	{
+		for(int j = 0; j < 32; j++)
+			putchar(files[i].hash[j]);
+		printf("  ");
+
+		for(int j = 0; j < 10; j++)
+			putchar(files[i].name[j]);
+
+		printf("  %lu ", files[i].size);
+		putchar('\n');
+	}
+
+	pclose(fp);
+
+	return files;
+}
 
 void handle_send_file_list(int socket_fd)   //received by peer servers
 {
     printf("in handle_send_file_list\n");
-    byte_t *body = serialize_file_array(TEST_FILE_LIST, 3);
-    message_t * message = message_constructor_from_params('1', SEND_FILE_LIST, '0', 3 * sizeof(file_t), body);
+
+    file_t *files = get_files_info();
+
+    byte_t *body = serialize_file_array(files, 5);
+    message_t * message = message_constructor_from_params('1', SEND_FILE_LIST, '0', 5 * FILE_STRUCT_SIZE, body);
     byte_t *serialized_message = serialize_message(message);
     printf("mes to be sent in hanfle send file list: \n");
     print_message(message);
