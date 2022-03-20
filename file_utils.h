@@ -50,4 +50,6 @@ struct offset* segment_file(int file_name, unsigned int nr_of_peers);
  * @return 0 on succesful removal
  */
 int remove_files(struct offset* offsets, int nr_of_peers);
+void write_segment_socket(struct offset* offsets, int socket_fd);
+struct offset* segment_file_size(unsigned int file_size, unsigned int nr_of_peers);
 #endif

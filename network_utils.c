@@ -13,7 +13,8 @@
 node_t NODES_ARRAY[NODES_NR] = {
     {"localhost", 5010},     // tracker server
     {"localhost", 5001},     // peer 1 - server
-    {"localhost", 5002}      // peer 2 - server
+    {"localhost", 5002},     // peer 2 - server
+    {"localhost", 5003}      // peer 3 - server
 };
 
 //on success returns an open file descriptor that can be used to write or read from the connection; else -1

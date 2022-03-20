@@ -31,10 +31,21 @@ void *thread_job(void *arg)
     int new_socket_fd = connect_to_node(param.ip, param.port);  //connect to the server process of the peer having the file, to issue a transfer bytes request
     printf("In thread, params: ip: %s ---- port: %d\n\n", param.ip, param.port);
 
-    byte_t body[sizeof(struct offset)];
-    message_t *transfer_req = message_constructor_from_params(REQUEST, TRANSFER_BYTES, '0', sizeof(struct offset), body);
+
+    // file_name is variable in size and we cannot say sizeof(struct offset) because we have a char *, which is fixed in size
+    unsigned body_size = strlen(param.off.file_name) + 2 * sizeof(int);
+
+    byte_t *body = malloc(sizeof(byte_t) * body_size);
+
+    // insert given offset struct into body
+    memcpy(body, param.off.file_name, strlen(param.off.file_name));
+    *(int *)(body + strlen(param.off.file_name)) = param.off.start;
+    *(int *)(body + strlen(param.off.file_name) + 4) = param.off.end;
+
+    message_t *transfer_req = message_constructor_from_params(REQUEST, TRANSFER_BYTES, '0', body_size, body);
     byte_t *serialized = serialize_message(transfer_req);
 
+    // send TRANSFER_BYTES request to the other peer's server
     int sent_bytes = write(new_socket_fd, serialized, (transfer_req->header->body_size+12));
     if (sent_bytes < 0)
     {
@@ -44,21 +55,21 @@ void *thread_job(void *arg)
     //read in blocks from the connection
     int read_bytes = 0;
     char buffer[4096];
-    printf("THREAD X read bytes:\n");
+
+    // name of the temp file for this segment
+    char tmp_name[100];
+
+    // build the temp file's name
+    snprintf(tmp_name, 100, "%d_temp", param.off.start);
+
+    // create temp file and write the segment
+    int tmp_fd = open(tmp_name, O_WRONLY | O_CREAT);
+    int written_bytes = 0;
+
     while((read_bytes = read(new_socket_fd, buffer, 4096))>0)
     {
-        for (int i=0; i<read_bytes; i++)
-        {
-            putchar(buffer[i]);
-        }
+        written_bytes = write(tmp_fd, buffer, read_bytes);
     }
-    /*
-    message_t
-    write(new_socket_fd, request(transfer))
-
-    read(new_socket_fd, buff, 4096)
-    write(temp_file, buff, 4096)
-    */
 
     return NULL;
 }
@@ -116,23 +127,18 @@ int main(int argc, char *argv[])
     thread_descriptor_t threads[seeders_index];
     thread_param_t params[seeders_index];
 
-    int file_size = 20; // bytes
-    struct offset offsets[seeders_index];
-    offsets[0].start = 0;
-    offsets[0].end = 10;
-    offsets[0].file_name = malloc(10);
-    strncpy(offsets[0].file_name, "test_file", 10); 
+    int file_size = 23; // bytes
+    struct offset *offsets = segment_file_size(file_size, seeders_index);
 
-    offsets[1].start = 11;
-    offsets[1].end = 20;
-    offsets[1].file_name = malloc(10);
-    strncpy(offsets[1].file_name, "test_file", 10);
 
     for (int i = 0; i < seeders_index; i++)
-    {
+    {   
+        offsets[i].file_name = malloc(100);
+        strncpy(offsets[i].file_name, "blabla", 7);
         params[i].off = offsets[i];
         strncpy(params[i].ip, seeders[i].ip_addr, strlen(seeders[i].ip_addr)+1);
         params[i].port = seeders[i].port;
+
     }
 
     for (int i = 0; i < seeders_index; i++)
@@ -156,7 +162,7 @@ int main(int argc, char *argv[])
 		}
 	}
     
-    // reconstruct(temp_files)
+    reconstruct_file(offsets, seeders_index);
 
     close(socket_fd);
 

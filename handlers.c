@@ -51,10 +51,19 @@ void handle_request_peer(message_t *request, int socket_fd)
     if (request->header->message_type == REQUEST && request->header->message_subtype == TRANSFER_BYTES )
     {
         struct offset request_param;
-        request_param.file_name = malloc(100);
-        memcpy(request_param.file_name, request->body, 16);
-        request_param.start = *(int *)(request->body+16);
-        request_param.end = *(int *)(request->body+20);
+        unsigned file_name_len = request->header->body_size - 2 * sizeof(int);
+
+        request_param.file_name = malloc(file_name_len);
+
+        memcpy(request_param.file_name, request->body, file_name_len);
+        request_param.start = *(int *)(request->body + file_name_len);
+        request_param.end = *(int *)(request->body + file_name_len + sizeof(int));
+
+        printf("BODY; %s\n", request->body);
+        printf("DESERIALIZED STRUCT: \n");
+        printf("fn: %s\n", request_param.file_name);
+        printf("start: %d\n", request_param.start);
+        printf("end: %d\n", request_param.end);
         //memcpy(request_param.start, request->body+16, 4);
         //memcpy(request_param.end, request->body+20, 4);   
         printf("peers server received transfer bytes request, will call handler\n");     
@@ -65,18 +74,25 @@ void handle_request_peer(message_t *request, int socket_fd)
 
 void handle_transfer_bytes(int socket_fd, struct offset off)
 {
-    int file_fd = open("test_download.txt", O_RDONLY);
-    if (file_fd == -1)
-    {
-        printf("error opening test_download file");
-    }
-    int read_bytes = 0;
-    char buffer[4096];
-    printf("before read, reading from file to send to client peer\n");
-    while((read_bytes = read(file_fd, buffer, 4096))>0)
-    {
-        int written_bytes = write(socket_fd, buffer, read_bytes);
-    }
+    // int file_fd = open("blabla", O_RDONLY);
+    // if (file_fd == -1)
+    // {
+    //     printf("error opening test_download file");
+    // }
+
+    printf("FILE NAME: %s\n", off.file_name);
+    printf("start: %d\n", off.start);
+    printf("end: %d\n", off.end);
+
+    write_segment_socket(&off, socket_fd);
+
+    // int read_bytes = 0;
+    // char buffer[4096];
+    // printf("before read, reading from file to send to client peer\n");
+    // while((read_bytes = read(file_fd, buffer, 4096))>0)
+    // {
+    //     int written_bytes = write(socket_fd, buffer, read_bytes);
+    // }
 }
 
 void handle_view_file_list(int socket_fd)
