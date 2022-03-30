@@ -113,6 +113,7 @@ void write_segment_socket(struct offset* offsets, int socket_fd) {
 
     /* get segment data and write it to segment file */
     if(segment_size > BLOCK_SIZE) {
+        //printf("HHHHHHHHHEEEEEEEEEEEERRRRRRRRRREEEEEEEEE\n");
         while( (read_bytes = fread( buff, 1, BLOCK_SIZE, fp)) > 0) {
             write(socket_fd, buff, read_bytes);
             // printf("1-DATA= \n%s", buff);
@@ -122,6 +123,7 @@ void write_segment_socket(struct offset* offsets, int socket_fd) {
     }
     else{
         read_bytes = fread(buff, 1, BLOCK_SIZE, fp);
+        //printf("READ BYTES: %ld\n", read_bytes);
         write(socket_fd, buff, segment_size);
         // printf("2-DATA= \n%s", buff);
         memset(buff, 0, read_bytes);
@@ -136,15 +138,18 @@ struct offset* segment_file_size(unsigned int file_size, unsigned int nr_of_peer
     struct offset *offsets = malloc(sizeof(struct offset) * nr_of_peers);
     unsigned int nr_of_bytes;
     
+    printf("file_size: %d\nnr_of_peers: %d\n", file_size, nr_of_peers);
     /* total number of bytes / peer */
     nr_of_bytes =  file_size / nr_of_peers;
 
     /* if there is a rest of bytes, update them here & add them to the first peer */
     unsigned int rest_of_bytes = file_size - (nr_of_bytes * nr_of_peers);
 
+    
+
     for(int i = 0; i < nr_of_peers; i++) {
 
-
+        //printf("SEGMENT LOOP %d\n", i);
         /* for each peer add an offset i to it & do conversion*/
 
         /* the first peer that needs to be treated with the rest of bytes */

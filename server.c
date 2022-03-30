@@ -17,7 +17,7 @@ void start_listening(server_t*, void (*request_handler)(message_t *request, int 
 
 server_t *server_constructor(char *ip_addr, int port, int backlog)
 {
-    printf("server constructor called!!!\n");
+    //printf("server constructor called!!!\n");
     server_t *server = malloc(sizeof(server_t));
     
     server->start_listening = start_listening;
@@ -49,7 +49,7 @@ server_t *server_constructor(char *ip_addr, int port, int backlog)
         perror("Failed to start listening...\n");
         exit(1);
     }
-    printf("constructor done");
+    //printf("constructor done");
     return server;
 }
 
@@ -63,7 +63,7 @@ void start_listening(server_t *server, void (*request_handler)(message_t *reques
     int inbound_conn_fd; //file descriptor corresponding to the socket opened for the inbound connection
     struct sockaddr_in client_addr;
     int client_addr_len = sizeof(struct sockaddr_in);
-    printf("Will start listening\n");
+    printf("Listening...\n");
     for (;;)
     {
         //accept incoming connections, this call blocks until a peer connects
